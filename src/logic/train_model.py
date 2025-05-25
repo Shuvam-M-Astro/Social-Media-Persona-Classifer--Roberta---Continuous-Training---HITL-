@@ -53,7 +53,7 @@ def train_model():
     logger.info("Total samples after merge and deduplication: %d", len(df))
 
     # Oversample underrepresented classes
-    min_count = 10
+    min_count = 1
     counts = df["label"].value_counts()
     for label, count in counts.items():
         if count < min_count:
