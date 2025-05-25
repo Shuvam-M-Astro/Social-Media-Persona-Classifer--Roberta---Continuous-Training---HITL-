@@ -3,6 +3,14 @@ from src.ui.backgrounds import set_form_background_video, set_result_background
 from src.logic.predict import predict_persona
 from src.logic.feedback import save_feedback, retrain_model
 from src.logic.predict import load_classifier  # import at the top
+import json
+import os
+
+def load_id2label():
+    """Load the id2label dictionary from the JSON file located in the parent directory's 'logic' subfolder."""
+    file_path = os.path.join(os.path.dirname(__file__), '..', 'logic', 'id2label.json')
+    with open(file_path, 'r') as f:
+        return json.load(f)
 
 IMAGE_MAP = {
     "Tech Enthusiast": "assets/tech.jpg",
@@ -76,7 +84,6 @@ def page_result():
         st.session_state.page = "form"
         st.rerun()
 
-
 def page_feedback():
     set_result_background()
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -86,20 +93,91 @@ def page_feedback():
     st.markdown("### 🧪 Was this prediction correct?")
     feedback = st.radio("Select one:", ["✅ Yes", "❌ No"])
 
+    # Handle feedback response
     if feedback == "✅ Yes":
         st.success("Thanks for participating!")
 
     elif feedback == "❌ No":
         corrected_label = st.text_input("📝 What should the correct label be?")
-        if st.button("📩 Submit Feedback"):
-            success = save_feedback(
-                bio=st.session_state.result["bio"],
-                posts=st.session_state.result["posts"],
-                corrected_label=corrected_label
-            )
-            if success:
-                st.success("✅ Feedback saved. Thank you!")
+        
+        # Only check after the label is entered
+        if corrected_label:
+            id2label = load_id2label()  # Load the existing labels
 
+            # Check if the corrected_label exists as a value in the id2label JSON
+            if corrected_label not in id2label.values():
+                st.warning(f"The label `{corrected_label}` is not recognized. To improve the model, please provide new post headlines.")
+                
+                new_posts = st.text_area("📝 Provide any new post headlines (optional, comma-separated):")
+                
+                if new_posts:  # If new posts are entered
+                    new_posts_list = [post.strip() for post in new_posts.split(",")]  # Split and clean the posts
+                    
+                    for post in new_posts_list:
+                        if post:  # Only save non-empty posts
+                            # Save each post as a new row with the same bio and corrected label
+                            success = save_feedback(
+                                bio=st.session_state.result["bio"],
+                                posts=post,  # Save each new post as a separate row
+                                corrected_label=corrected_label
+                            )
+                            if success:
+                                st.success(f"✅ Post '{post}' saved!")
+                        else:
+                            st.error("❌ Please enter valid post headlines.")
+                
+                if st.button("📩 Submit Feedback with New Posts"):
+                    success = save_feedback(
+                        bio=st.session_state.result["bio"],
+                        posts=st.session_state.result["posts"],
+                        corrected_label=corrected_label
+                    )
+                    if success:
+                        st.success("✅ Feedback saved. Thank you! New posts will help improve the model!")
+            
+            else:
+                if st.button("📩 Submit Feedback"):
+                    success = save_feedback(
+                        bio=st.session_state.result["bio"],
+                        posts=st.session_state.result["posts"],
+                        corrected_label=corrected_label
+                    )
+                    if success:
+                        st.success("✅ Feedback saved. Thank you!")
+
+    # **Always Available**: Add New Class Button
+    st.markdown("### ➕ Add a New Class")
+    new_class_name = st.text_input("📝 Enter the name of the new class:")
+    
+    if new_class_name:
+        st.markdown("Please provide 5 post headlines for this new class:")
+        new_class_posts = []
+        for i in range(5):
+            post = st.text_input(f"📝 Post headline {i + 1}:")
+            new_class_posts.append(post.strip())
+
+        if all(new_class_posts):  # Ensure 5 posts are provided
+            # Save the new posts for this class
+            for post in new_class_posts:
+                if post:  # Only save non-empty posts
+                    success = save_feedback(
+                        bio=st.session_state.result["bio"],
+                        posts=post,
+                        corrected_label=new_class_name  # New class label
+                    )
+                    if success:
+                        st.success(f"✅ Post for '{new_class_name}' saved!")
+
+            # Add the new class to id2label.json
+            id2label = load_id2label()  # Reload to ensure we have the latest version
+            id2label[new_class_name] = str(len(id2label))  # Assign the next available ID
+            with open(os.path.join(os.path.dirname(__file__), '..', 'logic', 'id2label.json'), 'w') as f:
+                json.dump(id2label, f, indent=4)
+            st.success(f"✅ New class '{new_class_name}' added successfully!")
+        else:
+            st.error("❌ Please provide exactly 5 post headlines.")
+
+    # Retraining model logic
     if st.session_state.get("show_retrain"):
         if st.button("🧠 Retrain Model"):
             with st.spinner("Retraining in progress..."):
@@ -111,7 +189,7 @@ def page_feedback():
                     st.error("❌ Retraining failed.")
                 st.text_area("Log Output", log, height=300)
 
-    # ✅ Always show this regardless of retraining
+    # Always show the option to take it again, regardless of retraining
     if st.button("🔁 Take It Again"):
         st.session_state.page = "form"
         st.session_state.show_retrain = False
