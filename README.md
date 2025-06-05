@@ -1,7 +1,7 @@
 # Persona Classifier with Streamlit and Hugging Face 🚀
 
 This project provides an interactive web app built with **Streamlit** and a fine-tuned **RoBERTa** model to classify personas based on a user's bio and social media posts. The app leverages **Transformers** and **PyTorch** for text classification and allows real-time feedback and model retraining.
-
+![Demo](assets/demo_image.png)
 ![Demo](demo/demo.gif)
 
 ---
