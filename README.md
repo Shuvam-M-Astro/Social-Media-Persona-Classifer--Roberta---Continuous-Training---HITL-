@@ -69,6 +69,49 @@ Make sure you have **Python 3.7+** installed.
 
 ---
 
+## 🧪 Testing
+
+This project includes comprehensive testing to ensure code quality and reliability.
+
+### Quick Test Commands
+
+```bash
+# Run all tests
+python run_tests.py
+
+# Run specific test types
+python run_tests.py --type unit      # Unit tests only
+python run_tests.py --type integration  # Integration tests only
+python run_tests.py --type e2e       # End-to-end tests only
+python run_tests.py --type fast      # Fast tests (exclude slow ones)
+
+# Run with additional checks
+python run_tests.py --all-checks     # Tests + linting + type checking
+```
+
+### Test Coverage
+
+The test suite provides comprehensive coverage:
+- **Unit Tests**: Test individual functions and components
+- **Integration Tests**: Test component interactions
+- **End-to-End Tests**: Test complete user workflows
+- **Coverage Reports**: HTML and XML coverage reports
+
+### Test Structure
+
+```
+tests/
+├── conftest.py              # Pytest configuration and fixtures
+├── unit/                    # Unit tests
+├── integration/             # Integration tests
+├── e2e/                     # End-to-end tests
+└── README.md               # Detailed testing documentation
+```
+
+For detailed testing information, see [tests/README.md](tests/README.md).
+
+---
+
 ## Docker Deployment (Optional) 🐳
 
 To run the app in a Docker container:
@@ -106,4 +149,19 @@ To retrain the model, click the "**Retrain Model**" button after submitting feed
 ## Contributing 🤝
 
 Feel free to fork this repository and submit pull requests for improvements, bug fixes, or new features. If you encounter any issues, please report them in the "**Issues**" section. 📝
+
+### Development Guidelines
+
+1. **Write Tests**: All new features should include appropriate tests
+2. **Run Tests**: Ensure all tests pass before submitting PRs
+3. **Code Quality**: Follow the project's coding standards
+4. **Documentation**: Update documentation for new features
+
+---
+
+## 📊 Project Status
+
+![Tests](https://github.com/yourusername/persona-classifier/workflows/Tests/badge.svg)
+![Coverage](https://codecov.io/gh/yourusername/persona-classifier/branch/main/graph/badge.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
