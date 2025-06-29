@@ -41,9 +41,28 @@ def predict_persona(text: str):
     Returns:
         top_label (str): Highest scoring label
         scores (dict): Score for each label
+        
+    Raises:
+        ValueError: If text is empty, None, or too short
+        RuntimeError: If classifier is not initialized
     """
+    # Input validation
+    if text is None:
+        raise ValueError("Text input cannot be None")
+    
+    if not isinstance(text, str):
+        raise ValueError("Text input must be a string")
+    
+    text = text.strip()
+    if not text:
+        raise ValueError("Text input cannot be empty or whitespace-only")
+    
+    if len(text.split()) < 5:
+        raise ValueError("Text input must contain at least 5 words for meaningful prediction")
+    
     if classifier is None:
         raise RuntimeError("Classifier not initialized")
+    
     try:
         results = classifier(text)[0]
         sorted_scores = sorted(results, key=lambda x: x["score"], reverse=True)
