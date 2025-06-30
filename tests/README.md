@@ -83,6 +83,84 @@ pytest tests/unit/test_predict.py
 pytest tests/unit/test_predict.py::TestPredict::test_predict_persona_success
 ```
 
+## 🎯 Common Test Scenarios
+
+### Scenario 1: Quick Development Feedback
+**When**: You're actively developing and want fast feedback
+```bash
+# Run only fast unit tests
+pytest tests/unit/ -v
+
+# Run specific module you're working on
+pytest tests/unit/test_predict.py -v
+
+# Run with immediate failure stop
+pytest tests/unit/ -x --tb=short
+```
+
+### Scenario 2: Before Committing Code
+**When**: You want to ensure your changes don't break existing functionality
+```bash
+# Run all tests with coverage
+python run_tests.py --all-checks
+
+# Or manually:
+pytest tests/ --cov=src --cov-report=term-missing
+```
+
+### Scenario 3: Debugging a Specific Issue
+**When**: You're investigating a bug or regression
+```bash
+# Run only tests related to the failing functionality
+pytest tests/unit/test_predict.py::TestPredict::test_predict_persona_success -vvv
+
+# Run with debugger on failure
+pytest tests/unit/test_predict.py --pdb
+
+# Run with detailed output and stop on first failure
+pytest tests/unit/test_predict.py -x -vvv --tb=long
+```
+
+### Scenario 4: Model Training Validation
+**When**: You've modified the training pipeline
+```bash
+# Run integration tests for training
+pytest tests/integration/ -v
+
+# Run only training-related tests
+pytest tests/ -k "training" -v
+```
+
+### Scenario 5: UI Component Changes
+**When**: You've modified UI components
+```bash
+# Run UI component tests
+pytest tests/unit/test_ui_components.py -v
+
+# Run end-to-end tests for complete workflows
+pytest tests/e2e/ -v
+```
+
+### Scenario 6: Performance Testing
+**When**: You want to ensure changes don't impact performance
+```bash
+# Run tests with timing information
+pytest tests/ --durations=10
+
+# Run only fast tests to establish baseline
+pytest tests/ -m "not slow" --durations=0
+```
+
+### Scenario 7: CI/CD Pipeline
+**When**: Setting up automated testing
+```bash
+# Run all tests with coverage and fail if coverage drops
+pytest tests/ --cov=src --cov-fail-under=85 --cov-report=xml
+
+# Run tests in parallel (if pytest-xdist is installed)
+pytest tests/ -n auto
+```
+
 ## 📊 Test Coverage
 
 The test suite aims for comprehensive coverage:
