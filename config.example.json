@@ -1,0 +1,26 @@
+{
+  "environment": "development",
+  "model": {
+    "model_dir": "final_roberta_persona",
+    "base_model": "roberta-base",
+    "max_length": 256,
+    "batch_size": 16,
+    "epochs": 5,
+    "learning_rate": 2e-5,
+    "test_size": 0.2
+  },
+  "data": {
+    "data_dir": "data",
+    "main_dataset": "persona_dataset.csv",
+    "feedback_dataset": "result.csv"
+  },
+  "ui": {
+    "page_title": "Decode Your Digital Persona",
+    "debug_mode": false,
+    "show_debug_info": false
+  },
+  "logging": {
+    "level": "INFO",
+    "log_dir": "logs"
+  }
+} 
