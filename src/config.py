@@ -25,6 +25,34 @@ class Environment(Enum):
 
 
 @dataclass
+class FaultToleranceConfig:
+    """Fault tolerance configuration."""
+    # Training fault tolerance
+    training_max_retries: int = 3
+    training_retry_delay: int = 30
+    training_timeout_minutes: int = 30
+    enable_training_checkpoints: bool = True
+    enable_training_backups: bool = True
+    checkpoint_dir: str = "training_checkpoints"
+    
+    # Feedback fault tolerance
+    feedback_queue_size: int = 1000
+    feedback_batch_size: int = 50
+    feedback_flush_interval: int = 300
+    feedback_max_retries: int = 3
+    enable_feedback_queue: bool = True
+    enable_feedback_backup: bool = True
+    
+    # Prediction fault tolerance
+    prediction_max_retries: int = 3
+    prediction_retry_delay: int = 1
+    prediction_timeout_seconds: int = 30
+    enable_prediction_fallback: bool = True
+    enable_prediction_cache: bool = True
+    prediction_cache_size: int = 1000
+    model_health_check_interval: int = 300
+
+@dataclass
 class ModelConfig:
     """Model-related configuration."""
     model_dir: str = "final_roberta_persona"
@@ -88,6 +116,7 @@ class AppConfig:
     data: DataConfig = field(default_factory=DataConfig)
     ui: UIConfig = field(default_factory=UIConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    fault_tolerance: FaultToleranceConfig = field(default_factory=FaultToleranceConfig)
     
     # Application paths
     base_dir: Path = field(default_factory=lambda: Path(__file__).parent.parent)
@@ -132,6 +161,19 @@ class AppConfig:
         # Logging configuration
         self.logging.level = os.getenv("LOG_LEVEL", self.logging.level)
         self.logging.log_dir = os.getenv("LOG_DIR", self.logging.log_dir)
+        
+        # Fault tolerance configuration
+        self.fault_tolerance.training_max_retries = int(os.getenv("TRAINING_MAX_RETRIES", self.fault_tolerance.training_max_retries))
+        self.fault_tolerance.training_retry_delay = int(os.getenv("TRAINING_RETRY_DELAY", self.fault_tolerance.training_retry_delay))
+        self.fault_tolerance.enable_training_checkpoints = os.getenv("ENABLE_TRAINING_CHECKPOINTS", "true").lower() == "true"
+        self.fault_tolerance.enable_training_backups = os.getenv("ENABLE_TRAINING_BACKUPS", "true").lower() == "true"
+        
+        self.fault_tolerance.feedback_queue_size = int(os.getenv("FEEDBACK_QUEUE_SIZE", self.fault_tolerance.feedback_queue_size))
+        self.fault_tolerance.enable_feedback_queue = os.getenv("ENABLE_FEEDBACK_QUEUE", "true").lower() == "true"
+        
+        self.fault_tolerance.prediction_max_retries = int(os.getenv("PREDICTION_MAX_RETRIES", self.fault_tolerance.prediction_max_retries))
+        self.fault_tolerance.enable_prediction_fallback = os.getenv("ENABLE_PREDICTION_FALLBACK", "true").lower() == "true"
+        self.fault_tolerance.enable_prediction_cache = os.getenv("ENABLE_PREDICTION_CACHE", "true").lower() == "true"
     
     def get_model_path(self) -> Path:
         """Get the full path to the model directory."""
