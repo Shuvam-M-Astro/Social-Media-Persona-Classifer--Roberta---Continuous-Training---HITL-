@@ -70,6 +70,54 @@ def initialize_session_state() -> None:
         if key not in st.session_state:
             st.session_state[key] = default_value
 
+def setup_fault_tolerance() -> None:
+    """Setup fault tolerance systems."""
+    try:
+        # Initialize fault tolerance configurations
+        from src.logic.train_model import FAULT_TOLERANCE_CONFIG
+        from src.logic.feedback import FEEDBACK_CONFIG
+        from src.logic.predict import PREDICTION_CONFIG
+        
+        # Update configurations from app config
+        FAULT_TOLERANCE_CONFIG.update({
+            'max_retries': config.fault_tolerance.training_max_retries,
+            'retry_delay': config.fault_tolerance.training_retry_delay,
+            'enable_checkpointing': config.fault_tolerance.enable_training_checkpoints,
+            'enable_backup': config.fault_tolerance.enable_training_backups,
+            'checkpoint_dir': config.fault_tolerance.checkpoint_dir
+        })
+        
+        FEEDBACK_CONFIG.update({
+            'queue_size': config.fault_tolerance.feedback_queue_size,
+            'enable_queue': config.fault_tolerance.enable_feedback_queue,
+            'backup_feedback': config.fault_tolerance.enable_feedback_backup
+        })
+        
+        PREDICTION_CONFIG.update({
+            'max_retries': config.fault_tolerance.prediction_max_retries,
+            'enable_fallback': config.fault_tolerance.enable_prediction_fallback,
+            'cache_predictions': config.fault_tolerance.enable_prediction_cache,
+            'cache_size': config.fault_tolerance.prediction_cache_size
+        })
+        
+        logger.info("Fault tolerance systems initialized")
+        
+    except Exception as e:
+        logger.error(f"Failed to setup fault tolerance: {e}")
+
+def cleanup_on_shutdown() -> None:
+    """Cleanup resources on application shutdown."""
+    try:
+        from src.logic.feedback import shutdown_feedback_system
+        shutdown_feedback_system()
+        logger.info("Application shutdown cleanup completed")
+    except Exception as e:
+        logger.error(f"Error during shutdown cleanup: {e}")
+
+# Register cleanup handler
+import atexit
+atexit.register(cleanup_on_shutdown)
+
 def handle_error(error: Exception, context: str = "Unknown") -> None:
     """Handle and log errors gracefully."""
     error_msg = f"Error in {context}: {str(error)}"
@@ -137,6 +185,7 @@ def main() -> None:
         
         # Initialize session state
         initialize_session_state()
+        setup_fault_tolerance()
         
         # Load page modules
         pages = load_page_modules()
