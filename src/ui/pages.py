@@ -85,6 +85,60 @@ def page_result():
         st.rerun()
 
 def page_feedback():
+    # Add fault tolerance monitoring section
+    if st.sidebar.checkbox("🔧 Show System Status"):
+        st.sidebar.subheader("System Status")
+        
+        # Training status
+        try:
+            from src.logic.train_model import get_training_status
+            training_status = get_training_status()
+            st.sidebar.write("**Training:**")
+            st.sidebar.write(f"Active: {'🟢' if not training_status['is_training'] else '🔴'}")
+            st.sidebar.write(f"Success Rate: {training_status.get('success_rate', 0):.1%}")
+        except Exception as e:
+            st.sidebar.write("**Training:** ❌ Error")
+        
+        # Feedback status
+        try:
+            from src.logic.feedback import get_feedback_stats
+            feedback_stats = get_feedback_stats()
+            st.sidebar.write("**Feedback:**")
+            st.sidebar.write(f"Queue: {feedback_stats['queue_size']}/{feedback_stats['queue_max_size']}")
+            st.sidebar.write(f"Total Items: {feedback_stats['total_feedback_items']}")
+        except Exception as e:
+            st.sidebar.write("**Feedback:** ❌ Error")
+        
+        # Prediction status
+        try:
+            from src.logic.predict import get_prediction_stats
+            prediction_stats = get_prediction_stats()
+            st.sidebar.write("**Prediction:**")
+            st.sidebar.write(f"Model: {'🟢' if prediction_stats['model_healthy'] else '🔴'}")
+            st.sidebar.write(f"Cache: {prediction_stats['cache_size']}/{prediction_stats['cache_max_size']}")
+        except Exception as e:
+            st.sidebar.write("**Prediction:** ❌ Error")
+        
+        # System controls
+        st.sidebar.subheader("System Controls")
+        if st.sidebar.button("🔄 Refresh Status"):
+            st.rerun()
+        
+        if st.sidebar.button("🧹 Clear Prediction Cache"):
+            try:
+                from src.logic.predict import clear_prediction_cache
+                clear_prediction_cache()
+                st.sidebar.success("Cache cleared!")
+            except Exception as e:
+                st.sidebar.error(f"Failed to clear cache: {e}")
+        
+        if st.sidebar.button("🗑️ Cleanup Failed Checkpoints"):
+            try:
+                from src.logic.train_model import cleanup_failed_checkpoints
+                removed = cleanup_failed_checkpoints()
+                st.sidebar.success(f"Removed {removed} failed checkpoints!")
+            except Exception as e:
+                st.sidebar.error(f"Failed to cleanup: {e}")
     set_result_background()
     st.markdown("<br><br>", unsafe_allow_html=True)
     render_result_card()
