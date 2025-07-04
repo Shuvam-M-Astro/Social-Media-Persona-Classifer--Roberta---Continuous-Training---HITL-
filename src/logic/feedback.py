@@ -226,20 +226,30 @@ def get_feedback_stats() -> Dict[str, Any]:
 
 
 def retrain_model(script_path=os.path.join("src", "logic", "train_model.py"), 
-                 enable_fault_tolerance: bool = True):
-    """Retrain model with fault tolerance options."""
+                 enable_fault_tolerance: bool = True,
+                 enable_validation: bool = True,
+                 strict_validation: bool = False):
+    """Retrain model with fault tolerance and validation options."""
     try:
         # Flush any pending feedback before retraining
         if FEEDBACK_CONFIG['enable_queue']:
             flushed_count = feedback_queue.flush_queue()
             logger.info(f"Flushed {flushed_count} feedback items before retraining")
         
-        # Build command with fault tolerance flag
+        # Build command with options
         cmd = ["python", script_path]
+        
+        # Add fault tolerance flag
         if enable_fault_tolerance:
             cmd.append("--fault-tolerance")
         else:
             cmd.append("--no-fault-tolerance")
+        
+        # Add validation flags
+        if not enable_validation:
+            cmd.append("--no-validation")
+        elif strict_validation:
+            cmd.append("--strict-validation")
         
         result = subprocess.run(
             cmd,
