@@ -51,6 +51,8 @@ rpds-py==0.25.1
 safetensors==0.5.3
 scikit-learn==1.6.1
 scipy==1.13.1
+matplotlib==3.8.2
+seaborn==0.13.0
 six==1.17.0
 smmap==5.0.2
 streamlit==1.45.1
