@@ -20,6 +20,9 @@ import logging
 import torch
 from typing import Dict, Any, Optional, Tuple
 
+# Import data validation
+from .data_validation import DataValidator, ValidationResult, validate_training_data
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -151,8 +154,71 @@ def verify_model_integrity(model_path: str) -> bool:
     except Exception:
         return False
 
-def train_model_with_fault_tolerance(enable_fault_tolerance: bool = True):
-    """Main training function with fault tolerance."""
+def validate_training_data_before_training(enable_validation: bool = True, 
+                                         strict_mode: bool = False) -> ValidationResult:
+    """Validate training data before starting the training process."""
+    if not enable_validation:
+        logger.info("Data validation disabled")
+        return ValidationResult(True, [], [], {}, [], [])
+    
+    logger.info("Starting data validation before training...")
+    
+    try:
+        # Run comprehensive validation
+        validation_result = validate_training_data(
+            main_data_path="persona_dataset.csv",
+            feedback_data_path="result.csv",
+            output_dir="validation_results"
+        )
+        
+        # Log validation results
+        if validation_result.is_valid:
+            logger.info("✅ Data validation passed")
+        else:
+            logger.error("❌ Data validation failed")
+            for error in validation_result.errors:
+                logger.error(f"  - {error}")
+        
+        # Log warnings
+        for warning in validation_result.warnings:
+            logger.warning(f"⚠️  {warning}")
+        
+        # Log recommendations
+        for rec in validation_result.recommendations:
+            logger.info(f"💡 {rec}")
+        
+        # In strict mode, fail training if validation fails
+        if strict_mode and not validation_result.is_valid:
+            logger.error("Training aborted due to data validation failures in strict mode")
+            return validation_result
+        
+        return validation_result
+        
+    except Exception as e:
+        logger.error(f"Data validation failed with exception: {e}")
+        if strict_mode:
+            return ValidationResult(False, [f"Validation exception: {e}"], [], {}, [], [])
+        else:
+            logger.warning("Continuing with training despite validation failure")
+            return ValidationResult(True, [], [f"Validation failed: {e}"], {}, [], [])
+
+def train_model_with_fault_tolerance(enable_fault_tolerance: bool = True, 
+                                   enable_validation: bool = True,
+                                   strict_validation: bool = False):
+    """Main training function with fault tolerance and data validation."""
+    
+    # Run data validation first
+    validation_result = validate_training_data_before_training(
+        enable_validation=enable_validation,
+        strict_mode=strict_validation
+    )
+    
+    # If validation failed in strict mode, abort training
+    if strict_validation and not validation_result.is_valid:
+        logger.error("Training aborted due to data validation failures")
+        return False
+    
+    # Continue with training
     if enable_fault_tolerance:
         return train_model_fault_tolerant()
     else:
@@ -259,7 +325,7 @@ def train_model_original():
         logger.info("Loaded main dataset with %d records.", len(df_main))
     except Exception as e:
         logger.error("Failed to load persona_dataset.csv: %s", e)
-        return
+        return False
 
     if os.path.isfile("result.csv"):
         try:
@@ -448,18 +514,39 @@ def cleanup_failed_checkpoints() -> int:
     return removed_count
 
 # Backward compatibility
-def train_model():
-    """Main training function - uses fault tolerance by default."""
-    return train_model_with_fault_tolerance(enable_fault_tolerance=True)
+def train_model(enable_validation: bool = True, strict_validation: bool = False):
+    """Main training function - uses fault tolerance by default with optional validation."""
+    return train_model_with_fault_tolerance(
+        enable_fault_tolerance=True,
+        enable_validation=enable_validation,
+        strict_validation=strict_validation
+    )
 
 if __name__ == "__main__":
-    # Allow command line arguments for fault tolerance
+    # Allow command line arguments for fault tolerance and validation
     import sys
     enable_fault_tolerance = True
+    enable_validation = True
+    strict_validation = False
     
     if len(sys.argv) > 1:
         if sys.argv[1] == "--no-fault-tolerance":
             enable_fault_tolerance = False
+        elif sys.argv[1] == "--no-validation":
+            enable_validation = False
+        elif sys.argv[1] == "--strict-validation":
+            strict_validation = True
+        elif sys.argv[1] == "--validate-only":
+            # Run only validation without training
+            result = validate_training_data_before_training(enable_validation=True, strict_mode=False)
+            print(f"Validation completed. Valid: {result.is_valid}")
+            if result.errors:
+                print("Errors:", result.errors)
+            if result.warnings:
+                print("Warnings:", result.warnings)
+            if result.recommendations:
+                print("Recommendations:", result.recommendations)
+            sys.exit(0)
         elif sys.argv[1] == "--status":
             status = get_training_status()
             print(json.dumps(status, indent=2))
@@ -468,5 +555,20 @@ if __name__ == "__main__":
             removed = cleanup_failed_checkpoints()
             print(f"Removed {removed} failed checkpoints")
             sys.exit(0)
+        elif sys.argv[1] == "--help":
+            print("Usage: python train_model.py [options]")
+            print("Options:")
+            print("  --no-fault-tolerance    Disable fault tolerance")
+            print("  --no-validation         Disable data validation")
+            print("  --strict-validation     Abort training if validation fails")
+            print("  --validate-only         Run validation only, no training")
+            print("  --status                Show training status")
+            print("  --cleanup               Clean up failed checkpoints")
+            print("  --help                  Show this help message")
+            sys.exit(0)
     
-    train_model_with_fault_tolerance(enable_fault_tolerance)
+    train_model_with_fault_tolerance(
+        enable_fault_tolerance=enable_fault_tolerance,
+        enable_validation=enable_validation,
+        strict_validation=strict_validation
+    )
