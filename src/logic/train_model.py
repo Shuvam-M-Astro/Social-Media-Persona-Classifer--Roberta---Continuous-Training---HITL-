@@ -32,18 +32,96 @@ logger = logging.getLogger(__name__)
 
 # Performance optimization configuration
 PERFORMANCE_CONFIG = {
+    # Mixed Precision Training
     'enable_mixed_precision': True,
+    'enable_amp': True,  # Automatic Mixed Precision
+    'fp16': True,
+    'bf16': False,  # Use bfloat16 if available
+    
+    # Gradient Accumulation
     'enable_gradient_accumulation': True,
     'gradient_accumulation_steps': 4,
+    
+    # Model Optimization
     'enable_pruning': False,
     'pruning_amount': 0.3,  # 30% of weights to prune
     'pruning_type': 'l1_unstructured',  # 'l1_unstructured', 'random_unstructured', 'ln_structured'
     'enable_quantization': False,
     'quantization_type': 'dynamic',  # 'dynamic', 'static'
     'target_model_size_mb': 100,  # Target model size in MB
-    'enable_amp': True,  # Automatic Mixed Precision
-    'fp16': True,
-    'bf16': False,  # Use bfloat16 if available
+    
+    # Training Parameters
+    'batch_size': 16,
+    'eval_batch_size': 32,
+    'max_length': 256,
+    'num_epochs': 5,
+    'learning_rate': 2e-5,
+    'warmup_steps': 500,
+    'weight_decay': 0.01,
+    'adam_epsilon': 1e-8,
+    'max_grad_norm': 1.0,
+    
+    # Data Loading
+    'dataloader_num_workers': 4,
+    'dataloader_pin_memory': True,
+    'prefetch_factor': 2,
+    
+    # Memory Management
+    'gradient_checkpointing': False,
+    'max_memory_mb': 8192,  # Maximum GPU memory usage in MB
+    'memory_efficient_attention': False,
+    
+    # Evaluation & Checkpointing
+    'evaluation_strategy': 'epoch',
+    'save_strategy': 'epoch',
+    'save_total_limit': 3,
+    'load_best_model_at_end': True,
+    'metric_for_best_model': 'accuracy',
+    'greater_is_better': True,
+    
+    # Logging & Monitoring
+    'logging_strategy': 'epoch',
+    'logging_steps': 100,
+    'report_to': 'none',  # 'none', 'tensorboard', 'wandb', 'all'
+    'disable_tqdm': True,
+    
+    # Early Stopping
+    'early_stopping_patience': 3,
+    'early_stopping_threshold': 0.001,
+    
+    # Advanced Optimizations
+    'use_cpu_offload': False,
+    'use_deepspeed': False,
+    'deepspeed_config': None,
+    'use_fsdp': False,  # Fully Sharded Data Parallel
+    'fsdp_config': None,
+    
+    # Model Architecture
+    'model_name': 'roberta-base',
+    'num_labels': None,  # Will be set automatically
+    'dropout_rate': 0.1,
+    'attention_dropout': 0.1,
+    'hidden_dropout': 0.1,
+    
+    # Data Processing
+    'text_cleaning': True,
+    'remove_duplicates': True,
+    'oversample_minority': True,
+    'min_samples_per_class': 1,
+    'test_size': 0.2,
+    'random_state': 42,
+    
+    # Performance Monitoring
+    'enable_profiling': False,
+    'profile_memory': False,
+    'track_gpu_usage': True,
+    'log_memory_stats': True,
+    
+    # Fault Tolerance
+    'save_steps': 1000,
+    'eval_steps': 1000,
+    'warmup_ratio': 0.1,  # Alternative to warmup_steps
+    'lr_scheduler_type': 'linear',  # 'linear', 'cosine', 'cosine_with_restarts', 'polynomial', 'constant', 'constant_with_warmup'
 }
 
 # Fault tolerance configuration
